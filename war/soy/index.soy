@@ -1,0 +1,65 @@
+{namespace org.gbc.luci}
+
+/**
+ * Main page
+ * @param points The points
+ */
+{template .index}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Learn UCI - Admin</title>
+  </head>
+  <body>
+    <h1>Learn UCI Admin Panel</h1>
+    <hr>
+    <h2>Add Description</h2>
+    <p>Adds a description for a point</p>
+    id: <br><select id="desc_id" style="padding:2px;margin:2px;width:659px">
+      {foreach $point in $points}
+        <option value="{$point.id}">{$point.text}</option>
+      {/foreach}
+    </select><br>
+    text: <br><textarea id="desc_text" cols="80" rows="8"></textarea><br>
+    <button id="desc_submit">Submit</button>
+    <hr>
+    <script type="text/javascript">{call .script/}</script>
+  </body>
+</html>
+{/template}
+
+/**
+ * Script
+ */
+{template .script}
+{literal}
+  document.getElementById('desc_submit').onclick = updateDesc;
+  function updateDesc() {
+    var id = document.getElementById('desc_id').value;
+    var text = document.getElementById('desc_text').innerText;
+    alert(sendRequest({
+      'req': 'update_point',
+      'id': id,
+      'text': text
+    }));
+  }
+    
+  function sendRequest(params) {
+    var pArr = [];
+    for (key in params) {
+      if (pArr.length > 0) {
+        pArr.push('&');
+      }
+      pArr.push(encodeURIComponent(key));
+      pArr.push('=');
+      pArr.push(encodeURIComponent(params[key])); 
+    }
+      
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/update', false);
+    xhr.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+    xhr.send(pArr.join(''));
+    return xhr.responseText;
+  }
+{/literal}
+{/template}
