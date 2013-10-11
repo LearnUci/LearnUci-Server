@@ -10,6 +10,8 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.Filter;
 import com.google.appengine.api.datastore.Text;
+import com.google.appengine.api.search.Document;
+import com.google.appengine.api.search.Field;
 
 @SuppressWarnings("serial")
 public class MapPoint extends AbstractDatastoreEntity {
@@ -58,10 +60,46 @@ public class MapPoint extends AbstractDatastoreEntity {
     return id;
   }
   
+  @Override
+  public void save() {
+    // Index the document if id is null, aka isn't in datastore yet
+    boolean indexDoc = (id == null);
+    // Run save first, so we have an id
+    super.save();
+    if (indexDoc) {
+      Document doc = Document.newBuilder()
+          .addField(Field.newBuilder().setName("name").setText(getName()))
+          .addField(Field.newBuilder().setName("abbr").setText(getAbbr()))
+          .addField(Field.newBuilder().setName("id").setText(String.valueOf(id)))
+          .build();
+      indexEntity(KIND, doc);
+    }
+  }
+  
   public Builder builder() {
     Builder builder = new Builder();
     loadBuilder(builder);
     return builder;
+  }
+  
+  public static void deleteAll(String key) {
+    DatastoreManager.deleteAll(key, KIND);
+    deleteAllIndexes(KIND);
+  }
+  
+  /**
+   * Load by performing a keyword search
+   * @param query The keywords to search by
+   * @return A List of MapPoint objects that match the keywords
+   */
+  public static List<MapPoint> load(String query) {
+    List<Long> ids = search(KIND, query);
+    // For each id given by the Search api, load a MapPoint by that id
+    List<MapPoint> points = new ArrayList<MapPoint>();
+    for (Long id : ids) {
+      points.add(load(id));
+    }
+    return points;
   }
   
   public static List<MapPoint> loadByFilter(Filter filter) {
@@ -74,8 +112,6 @@ public class MapPoint extends AbstractDatastoreEntity {
   }
   
   public static List<MapPoint> loadAll() {
-    
-    
     List<Entity> entities = DatastoreManager.query(new Query(KIND));
     List<MapPoint> points = new ArrayList<MapPoint>();
     for (Entity entity : entities) {

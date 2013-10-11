@@ -1,6 +1,8 @@
 package org.gbc.luci.datastore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
@@ -9,6 +11,16 @@ import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Text;
+import com.google.appengine.api.search.Document;
+import com.google.appengine.api.search.GetRequest;
+import com.google.appengine.api.search.GetResponse;
+import com.google.appengine.api.search.Index;
+import com.google.appengine.api.search.IndexSpec;
+import com.google.appengine.api.search.PutException;
+import com.google.appengine.api.search.Results;
+import com.google.appengine.api.search.ScoredDocument;
+import com.google.appengine.api.search.SearchServiceFactory;
+import com.google.appengine.api.search.StatusCode;
 import com.google.gson.JsonObject;
 
 abstract class AbstractDatastoreEntity {
@@ -49,6 +61,29 @@ abstract class AbstractDatastoreEntity {
     builder.setId(id);
   }
   
+  protected static void deleteAllIndexes(String indexName) {
+    try {
+      IndexSpec spec = IndexSpec.newBuilder().setName(indexName).build();
+      Index index = SearchServiceFactory.getSearchService().getIndex(spec);
+      // looping because getRange by default returns up to 100 documents at a time
+      while (true) {
+        List<String> docIds = new ArrayList<String>();
+        // Return a set of doc_ids.
+        GetRequest request = GetRequest.newBuilder().setReturningIdsOnly(true).build();
+        GetResponse<Document> response = index.getRange(request);
+        if (response.getResults().isEmpty()) {
+          break;
+        }
+        for (Document doc : response) {
+          docIds.add(doc.getId());
+        }
+        index.delete(docIds);
+      }
+    } catch (RuntimeException e) {
+      e.printStackTrace();
+    }
+  }
+  
   protected static <T extends AbstractDatastoreEntity> T load(Entity entity, T instance) {
     for (Map.Entry<String, Object> entry : entity.getProperties().entrySet()) {
       instance.put(entry.getKey(), entry.getValue());
@@ -62,6 +97,31 @@ abstract class AbstractDatastoreEntity {
         instance);
   }
 
+  protected void indexEntity(String indexName, Document doc) {
+    IndexSpec spec = IndexSpec.newBuilder().setName(indexName).build();
+    Index index = SearchServiceFactory.getSearchService().getIndex(spec);
+    try {
+      index.put(doc);
+    } catch (PutException e) {
+      e.printStackTrace();
+      if (StatusCode.TRANSIENT_ERROR.equals(e.getOperationResult().getCode())) {
+        indexEntity(indexName, doc);
+      }
+    }
+  }
+  
+  protected static List<Long> search(String indexName, String query) {
+    List<Long> ids = new ArrayList<Long>();
+    IndexSpec spec = IndexSpec.newBuilder().setName(indexName).build();
+    Index index = SearchServiceFactory.getSearchService().getIndex(spec);
+    Results<ScoredDocument> results = index.search(query);
+    // Only name, abbr, and id are indexed, so we need to grab all ids and
+    // retrieve the actual entities from the datastore
+    for (ScoredDocument doc : results) {
+      ids.add(Long.valueOf(doc.getOnlyField("id").getText()));
+    }
+    return ids;
+  }
   
   /**
    * Saves the entity to the datastore.

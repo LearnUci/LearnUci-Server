@@ -23,6 +23,7 @@ public class GuiceServletModule extends ServletModule {
     serve("/add").with(AddPointServlet.class);
     serve("/update").with(UpdatePointServlet.class);
     serve("/query").with(QueryPointServlet.class);
+    serve("/delete").with(DeletePointServlet.class);
   }
   
   /**

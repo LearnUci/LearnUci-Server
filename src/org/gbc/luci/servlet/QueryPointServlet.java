@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -40,16 +39,10 @@ public class QueryPointServlet extends HttpServlet {
     put("zw", .3f); // zot wheels
     put("phone", .25f); // phones
   }};
-  
-  private List<MapPoint> points = null;
-  
+
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     try {
-      if (points == null) {
-        points = MapPoint.loadAll();
-      }
-      
       JsonArray respArray = new JsonArray();
       
       String action = require(req, "action");
@@ -72,7 +65,9 @@ public class QueryPointServlet extends HttpServlet {
             return (int) (1000000 * (p2.matchFactor - p1.matchFactor));
           }
         });
-        for (MapPoint point : points) {
+        // After we get a list of points that match the query, run through matching filter to 
+        // sort them, then return
+        for (MapPoint point : MapPoint.load(value)) {
           pq.add(getMatchFactor(point, value));
         }
         for (int i = 0; i < 10; i ++) {

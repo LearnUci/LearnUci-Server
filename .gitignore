@@ -1,27 +1,16 @@
-*.pydevproject
-.project
-.metadata
-bin/**
-tmp/**
-tmp/**/*
-gen/**
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.classpath
-.settings/
-.loadpath
+.settings/*
 
-# External tool builders
-.externalToolBuilders/
+*.class
 
-# Locally stored "Eclipse launch configurations"
-*.launch
+# Package Files #
+*.war
 
-# CDT-specific
-.cproject
+# boilerplate generated classes #
+.apt_generated/
 
-# PDT-specific
-.buildpath
+# more caches and things from deploy #
+war/WEB-INF/deploy/
+war/WEB-INF/classes/
+
+# App engine generated #
+war/WEB-INF/appengine-generated/
