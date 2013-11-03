@@ -20,9 +20,10 @@ public class GuiceServletModule extends ServletModule {
       put("soyPath", "org.gbc.luci.index");
       put("soyData", "indexPage");
     }});
-    serve("/add").with(AddPointServlet.class);
+    serve("/addpoint").with(AddPointServlet.class);
+    serve("/addtour").with(AddTourServlet.class);
     serve("/update").with(UpdatePointServlet.class);
-    serve("/query").with(QueryPointServlet.class);
+    serve("/query").with(QueryServlet.class);
     serve("/delete").with(DeletePointServlet.class);
   }
   

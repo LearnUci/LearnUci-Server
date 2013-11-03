@@ -15,51 +15,39 @@
     <hr>
     <h2>Add Description</h2>
     <p>Adds a description for a point</p>
-    id: <br><select id="desc_id" style="padding:2px;margin:2px;width:659px">
-      {foreach $point in $points}
-        <option value="{$point.id}">{$point.text}</option>
-      {/foreach}
-    </select><br>
+    id: <br>
+    {call .points}
+      {param points:$points/}
+      {param id:'desc_id'/}
+    {/call}<br>
     text: <br><textarea id="desc_text" cols="80" rows="8"></textarea><br>
     <button id="desc_submit">Submit</button>
     <hr>
-    <script type="text/javascript">{call .script/}</script>
+    <h2>Add Tour</h2>
+    <p>Adds a tour</p>
+    Tour name: <br><input style="padding:2px;margin:2px;width:659px" type="text" id="tour_name"><br>
+    Point: <br>{call .points}
+      {param points:$points/}
+      {param id:'tour_id'/}
+    {/call}<br>
+    <button id="tour_button">Add current point</button><br>
+    Points: <br><textarea id="tour_points" cols="80" rows="8" disabled="true"></textarea><br>
+    Desc: <br><textarea id="tour_desc" cols="80" rows="8"></textarea><br>
+    Image: <input type="file" id="tour_img"><br>
+    <button id="tour_submit">Add tour</button>
+    <script type="text/javascript" src="js/script.js"></script>
   </body>
 </html>
 {/template}
 
 /**
- * Script
+ * @param points The points
+ * @param id The id
  */
-{template .script}
-{literal}
-  document.getElementById('desc_submit').onclick = updateDesc;
-  function updateDesc() {
-    var id = document.getElementById('desc_id').value;
-    var text = document.getElementById('desc_text').innerText;
-    alert(sendRequest({
-      'req': 'update_point',
-      'id': id,
-      'text': text
-    }));
-  }
-    
-  function sendRequest(params) {
-    var pArr = [];
-    for (key in params) {
-      if (pArr.length > 0) {
-        pArr.push('&');
-      }
-      pArr.push(encodeURIComponent(key));
-      pArr.push('=');
-      pArr.push(encodeURIComponent(params[key])); 
-    }
-      
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/update', false);
-    xhr.setRequestHeader('Content-type','application/x-www-form-urlencoded');
-    xhr.send(pArr.join(''));
-    return xhr.responseText;
-  }
-{/literal}
+{template .points}
+<select id="{$id}" style="padding:2px;margin:2px;width:659px">
+  {foreach $point in $points}
+    <option value="{$point.id}_{$point.text}">{$point.text}</option>
+  {/foreach}
+</select>
 {/template}

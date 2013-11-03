@@ -56,10 +56,6 @@ public class MapPoint extends AbstractDatastoreEntity {
     return getText("desc");
   }
   
-  public Long getId() {
-    return id;
-  }
-  
   @Override
   public void save() {
     // Index the document if id is null, aka isn't in datastore yet

@@ -30,6 +30,10 @@ abstract class AbstractDatastoreEntity {
   protected abstract boolean canPut(String key, Object c);
   protected abstract String getKind();
   
+  public Long getId() {
+    return id;
+  }
+  
   protected void put(String key, Object value) {
     if (canPut(key, value)) {
       keyValues.put(key, value);
@@ -155,6 +159,7 @@ abstract class AbstractDatastoreEntity {
         obj.addProperty(entry.getKey(), entry.getValue().toString());
       }
     }
+    obj.addProperty("id", id);
     return obj;
   }
   
