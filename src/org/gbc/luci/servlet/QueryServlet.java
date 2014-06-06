@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -44,6 +45,8 @@ public class QueryServlet extends HttpServlet {
     put("phone", .25f); // phones
   }};
 
+  private List<MapPoint> locations = null;
+  
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     try {
@@ -101,36 +104,15 @@ public class QueryServlet extends HttpServlet {
         PriorityQueue<MapPoint> pq = new PriorityQueue<MapPoint>(10, new Comparator<MapPoint>() {
           @Override
           public int compare(MapPoint p1, MapPoint p2) {
-            return getDistance(p1) - getDistance(p2);
-          }
-          
-          // Calculate the great circle distance between the given point and the latitude and
-          // longitude of the user
-          private int getDistance(MapPoint p) {
-            float lat = Float.valueOf(p.getLat());
-            float lng = Float.valueOf(p.getLng());
-            double dLat = rad(lat - latitude);
-            double dLng = rad(lng - longitude);
-            double dist = 1000000 * Math.asin(Math.sqrt(sinsq(dLat / 2) + cos(rad(latitude))
-                * cos(rad(lat)) * sinsq(dLng / 2)));
-            return (int) dist;
-          }
-          
-          private double rad(double deg) {
-            return Math.toRadians(deg);
-          }
-          
-          private double sinsq(double angle) {
-            return Math.sin(angle) * Math.sin(angle);
-          }
-          
-          private double cos(double angle) {
-            return Math.cos(angle);
+            return getDistance(p1, latitude, longitude) - getDistance(p2, latitude, longitude);
           }
         });
         
+        if (locations == null) {
+          locations = MapPoint.loadAll();
+        }
         // Add all points into the priority queue
-        for (MapPoint point : MapPoint.loadAll()) {
+        for (MapPoint point : locations) {
           pq.add(point);
         }
         
@@ -149,13 +131,45 @@ public class QueryServlet extends HttpServlet {
     }
   }
 
+  //Calculate the great circle distance between the given point and the latitude and
+  // longitude of the user
+  private int getDistance(MapPoint p, float latitude, float longitude) {
+    float lat = Float.valueOf(p.getLat());
+    float lng = Float.valueOf(p.getLng());
+    float newLat = (0.120246f * lat) + (-0.0460953f * lng) + 24.1819f;
+    float newLng = (0.0693213f * lat) + (0.118713f * lng) - 106.18865f;
+    lat = newLat;
+    lng = newLng;
+    
+    double dLat = rad(lat - latitude);
+    double dLng = rad(lng - longitude);
+    double dist = 1000000 * Math.asin(Math.sqrt(sinsq(dLat / 2) + cos(rad(latitude))
+        * cos(rad(lat)) * sinsq(dLng / 2)));
+    return (int) dist;
+  }
+  
+  private double rad(double deg) {
+    return Math.toRadians(deg);
+  }
+  
+  private double sinsq(double angle) {
+    return Math.sin(angle) * Math.sin(angle);
+  }
+  
+  private double cos(double angle) {
+    return Math.cos(angle);
+  }
+  
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     doGet(req, resp);
   }
   
-  private <T> T getOnly(Iterable<T> iterable) {
+  private <T> T getOnly(Iterable<T> iterable) throws InvalidQueryActionException {
     Iterator<T> iterator = iterable.iterator();
+    if (!iterator.hasNext()) {
+      throw new InvalidQueryActionException("Can't find element");
+    }
     T value = iterator.next();
     if (iterator.hasNext()) {
       throw new IllegalArgumentException("Expected only one element");

@@ -14,12 +14,12 @@ fileReader.onload = function(e) {
 
 function updateDesc() {
   var id = document.getElementById('desc_id').value.split('_')[0];
-  var text = document.getElementById('desc_text').innerText;
-  alert('/update', sendRequest({
+  var text = document.getElementById('desc_text').value;
+  sendRequest('/update', {
     'req': 'update_point',
     'id': id,
     'text': text
-  }));
+  });
 }
   
 function updateImg() {

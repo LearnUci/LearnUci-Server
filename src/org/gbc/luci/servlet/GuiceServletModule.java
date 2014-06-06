@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.gbc.luci.providers.IndexSoyParameterProvider;
 import org.gbc.luci.providers.ProviderMap;
+import org.gbc.luci.providers.SupportSoyParameterProvider;
 
 import com.google.inject.servlet.ServletModule;
 
@@ -14,11 +15,16 @@ public class GuiceServletModule extends ServletModule {
   @Override
   protected void configureServlets() {
     ProviderMap.put("indexPage", new IndexSoyParameterProvider());
+    ProviderMap.put("supportPage", new SupportSoyParameterProvider());
     
     // Bind servlets
     serve("/").with(StaticPageServlet.class, new HashMap<String, String>() {{
       put("soyPath", "org.gbc.luci.index");
       put("soyData", "indexPage");
+    }});
+    serve("/support.html").with(HtmlPageServlet.class, new HashMap<String, String>() {{
+      put("soyPath", "org.gbc.luci.support");
+      put("soyData", "supportPage");
     }});
     serve("/addpoint").with(AddPointServlet.class);
     serve("/addtour").with(AddTourServlet.class);
